@@ -80,20 +80,26 @@ async function getRaces(from, to) {
 	let month = dt.getMonth() + 1;
 	timeToApi += dt.getFullYear() + "-" + month + "-" + dt.getDate();
 	let races = await fetch(
-		`https://api.rasp.yandex.net/v3.0/search/?apikey=${key}&format=json&from=${from}&to=${to}&lang=ru_RU&transoprt_types=suburban&page=1&date=${timeToApi}`
+		`https://api.rasp.yandex.net/v3.0/search/?apikey=${key}&format=json&from=${from}&to=${to}&lang=ru_RU&transport_types=suburban&page=1&date=${timeToApi}`
 	);
 	let data = await races.json();
 
 	let str = "";
+
 	let rightArr = await ee(await data.segments);
-	let date = new Date(Date.parse(await rightArr[0]));
+	let date = new Date(Date.parse(await rightArr[0].departure));
 	let dateStr = date.getHours() + ":" + date.getMinutes();
 	let timeDifference = new Date(
-		Date.parse(await rightArr[0]) - new Date().getTime()
+		Date.parse(await rightArr[0].departure) - new Date().getTime()
 	);
 
 	str = `Ближайшая электричка в ${dateStr}
-        У вас есть ${timeDifference.getMinutes()} минут ${timeDifference.getSeconds()} секунд, чтобы дойти до неё 😼`;
+		У вас есть ${timeDifference.getMinutes()} минут ${timeDifference.getSeconds()} секунд, чтобы дойти до неё 😼`;
+	let kk = await rightArr[0].thread.express_type;
+
+	if ((await kk) !== null) {
+		str += "/n Это ласточка, так что поторопитесь купить билет";
+	}
 	return str;
 }
 async function ee(arr) {
@@ -101,10 +107,10 @@ async function ee(arr) {
 	const waitTime = 12200000; //2 hours
 	for (let i in arr) {
 		if (
-			Date.parse(arr[i].arrival) <= new Date().getTime() + waitTime &&
-			Date.parse(arr[i].arrival) >= new Date().getTime()
+			Date.parse(arr[i].departure) <= new Date().getTime() + waitTime &&
+			Date.parse(arr[i].departure) >= new Date().getTime()
 		) {
-			bb.push(arr[i].arrival);
+			bb.push(arr[i]);
 		}
 	}
 	return bb;
